@@ -4,11 +4,17 @@ import os
 import telebot
 from flask import Flask, request
 
-import config_my
-
 # from time_logger import *
 
-bot = telebot.TeleBot(config_my.token)
+if 'bot_token' in os.environ:
+    bot_token = os.environ['bot_token']
+    print('getting token from env var')
+else:
+    print('getting token from file')
+    import config_my
+    bot_token = config_my.token
+
+bot = telebot.TeleBot(bot_token)
 
 
 @bot.message_handler(commands=["start"])
