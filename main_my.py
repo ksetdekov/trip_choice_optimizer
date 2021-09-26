@@ -14,8 +14,6 @@ else:
 
     bot_token = token
 
-PORT = int(os.environ.get('PORT', 5000))
-
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -71,9 +69,9 @@ def main():
     dp.add_error_handler(error)
 
     # Start the Bot
-    updater.start_webhook(listen="0.0.0.0",
-                          port=int(PORT),
-                          url_path=bot_token)
+    PORT = int(os.environ.get("PORT", 3978))
+    updater.start_webhook(listen="0.0.0.0", port=PORT, url_path=bot_token)
+
     updater.bot.setWebhook('https://choice-optimizer.herokuapp.com/' + bot_token)
 
     # Run the bot until you press Ctrl-C or the process receives SIGINT,
