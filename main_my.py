@@ -6,7 +6,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 # from time_logger import *
 
 if 'bot_token' in os.environ:
-    bot_token = os.environ['bot_token']
+    bot_token = os.environ.get('bot_token')
     print('getting token from env var')
 else:
     print('getting token from file')
