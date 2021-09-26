@@ -52,7 +52,8 @@ if __name__ == '__main__':
         def webhook():
             bot.remove_webhook()
             bot.set_webhook(
-                url="https://choice-optimizer.herokuapp.com")  # этот url нужно заменить на url вашего Хероку приложения
+                url="https://choice-optimizer.herokuapp.com/" + bot_token)
+            # этот url нужно заменить на url вашего Хероку приложения
             return "?", 200
 
 
