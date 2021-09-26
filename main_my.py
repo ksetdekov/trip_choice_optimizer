@@ -1,7 +1,12 @@
+import logging
+import os
+
 import telebot
+from flask import Flask, request
 
 import config_my
-from parser_saver import *
+
+# from time_logger import *
 
 bot = telebot.TeleBot(config_my.token)
 
@@ -9,20 +14,43 @@ bot = telebot.TeleBot(config_my.token)
 @bot.message_handler(commands=["start"])
 def hello(message):
     bot.send_message(message.chat.id, """Добрый день.\n
-Я бот для поиска по странице https://wiki.openstreetmap.org/wiki/RU:Как_обозначить \n
-Пока я умею только искать по заголовкам разделов и выводить их содержимое, но поиск будет работать как по частичному 
-совпадению, так и по похожим словам\n
-Введите название объекта:""")
+Я бот для поиска оптимального варианта в условиях неопределнности\n
+Использую метод Томпсоновского сэмплирования для решения задачи многорукого бандита с нормальным распределением наград
+и учетом неприятия риска\n
+Можно использовать для поиска самого быстрого и стабильного вида транспорта на работу за минимум итерация.
+введите через запятую варианты, которые будем перебирать:""")
 
 
 @bot.message_handler(func=lambda message: message.text.lower().strip() != '/start')
 def echo(message):
-    bot.send_message(message.chat.id, 'Ищу...')
-    result_answer = result_find(message.text)
-    bot.send_message(message.chat.id, 'Найденный раздел - ' + result_answer[0])
-    bot.send_message(message.chat.id, 'Совпадение с запросом : ' + str(result_answer[1]) + '%')
-    bot.send_message(message.chat.id, result_answer[2])
+    bot.send_message(message.chat.id, 'ответ')
 
 
-if __name__ == '__main__':
-    bot.infinity_polling()
+# Проверим, есть ли переменная окружения Хероку (как ее добавить смотрите ниже)
+if "HEROKU" in list(os.environ.keys()):
+    logger = telebot.logger
+    telebot.logger.setLevel(logging.INFO)
+
+    server = Flask(__name__)
+
+
+    @server.route("/bot", methods=['POST'])
+    def getMessage():
+        bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
+        return "!", 200
+
+
+    @server.route("/")
+    def webhook():
+        bot.remove_webhook()
+        bot.set_webhook(
+            url="https://choice-optimizer.herokuapp.com")  # этот url нужно заменить на url вашего Хероку приложения
+        return "?", 200
+
+
+    server.run(host="0.0.0.0", port=os.environ.get('PORT', 80))
+else:
+    # если переменной окружения HEROKU нету, значит это запуск с машины разработчика.
+    # Удаляем вебхук на всякий случай, и запускаем с обычным поллингом.
+    bot.remove_webhook()
+    bot.polling(none_stop=True)

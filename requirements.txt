@@ -1,0 +1,6 @@
+pyTelegramBotAPI
+requests
+matplotlib
+numpy
+pandas
+Flask
