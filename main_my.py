@@ -70,8 +70,7 @@ dp.add_error_handler(error)
 # Start the Bot
 PORT = int(os.environ.get("PORT", 3978))
 updater.start_webhook(listen="0.0.0.0", port=PORT, url_path=bot_token,
-                      webhook_url='choice-optimizer.herokuapp.com/' + bot_token)
-
+                      webhook_url='https://choice-optimizer.herokuapp.com/' + bot_token)
 
 # Run the bot until you press Ctrl-C or the process receives SIGINT,
 # SIGTERM or SIGABRT. This should be used most of the time, since
