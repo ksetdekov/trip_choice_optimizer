@@ -1,6 +1,4 @@
-pyTelegramBotAPI
-requests
+python-telegram-bot
 matplotlib
 numpy
 pandas
-Flask
