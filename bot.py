@@ -11,7 +11,7 @@ if 'bot_token' in os.environ:
 else:
     print('getting token from file')
     from config_my import token
-    bot_token = token
+    TOKEN = token
 
 PORT = int(os.environ.get('PORT', 5000))
 
