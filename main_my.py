@@ -53,7 +53,7 @@ def main():
     # Create the Updater and pass it your bot's token.
     # Make sure to set use_context=True to use the new context based callbacks
     # Post version 12 this will no longer be necessary
-    updater = Updater(bot_token, use_context=True)
+    updater = Updater(bot_token)
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
@@ -70,13 +70,14 @@ def main():
 
     # Start the Bot
     PORT = int(os.environ.get("PORT", 3978))
-    updater.start_webhook(listen="0.0.0.0", port=PORT, url_path=bot_token)
+    updater.start_webhook(listen="0.0.0.0", port=PORT, url_path=bot_token,
+                          webhook_url='https://choice-optimizer.herokuapp.com/' + bot_token)
 
-    updater.bot.setWebhook('https://choice-optimizer.herokuapp.com/' + bot_token)
 
     # Run the bot until you press Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since
     # start_polling() is non-blocking and will stop the bot gracefully.
+    # add handlers
     updater.idle()
 
 
