@@ -13,11 +13,18 @@ dp = Dispatcher(bot)
 dp.middleware.setup(LoggingMiddleware())
 
 
+
+@dp.message_handler(commands=['start', 'help'])
+async def send_welcome(message: types.Message):
+    """
+    This handler will be called when user sends `/start` or `/help` command
+    """
+    await message.reply("Hi!\nI'm EchoBot!\nPowered by aiogram.")
+
 @dp.message_handler()
 async def echo(message: types.Message):
     logging.warning(f'Recieved a message from {message.from_user}')
-    await bot.send_message(message.chat.id, message.text)
-
+    await message.answer(message.text)
 
 async def on_startup(dp):
     logging.warning(
