@@ -2,10 +2,11 @@
 find best commute using Thompson Sampling algorithms for Mean-Variance Bandits (https://arxiv.org/pdf/2002.00232.pdf)
 
 
-# todo
+bot part based on code from https://github.com/aahnik/webhook-aiogram-heroku
+# TODO
 
-1. бот на heroku
-2. проверить, что эхо работает
+1. бот на heroku - done
+2. проверить, что эхо работает - done
 3. завернуть то что есть в бота
 3. добавить функционал хранения данных
 5. добавить функцию - что выбрать?
