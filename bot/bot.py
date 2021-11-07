@@ -27,7 +27,8 @@ async def send_welcome(message: types.Message):
     """
     This handler will be called when user sends `/start`  command
     """
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, 
+                                         one_time_keyboard=True)
     buttons = ["Create new optimization", "Continue ...", "/help"]
     keyboard.add(*buttons)
     await message.answer("Hi!\nI'm choice_optimizer bot!\nSelect what you want to do?", reply_markup=keyboard)    
