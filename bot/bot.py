@@ -27,7 +27,11 @@ async def send_welcome(message: types.Message):
     """
     This handler will be called when user sends `/start`  command
     """
-    await message.answer("Hi!\nI'm EchoBot!\nPowered by aiogram.")    
+    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    buttons = ["Create new optimization", "Continue ...", "/help"]
+    keyboard.add(*buttons)
+    await message.answer("Hi!\nI'm choice_optimizer bot!\nSelect what you want to do?")    
+
 
 @dp.message_handler(commands="answer")
 async def cmd_answer(message: types.Message):
