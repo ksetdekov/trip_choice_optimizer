@@ -30,7 +30,7 @@ async def send_welcome(message: types.Message):
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     buttons = ["Create new optimization", "Continue ...", "/help"]
     keyboard.add(*buttons)
-    await message.answer("Hi!\nI'm choice_optimizer bot!\nSelect what you want to do?")    
+    await message.answer("Hi!\nI'm choice_optimizer bot!\nSelect what you want to do?", reply_markup=keyboard)    
 
 
 @dp.message_handler(commands="answer")
