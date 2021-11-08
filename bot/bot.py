@@ -14,12 +14,29 @@ dp.middleware.setup(LoggingMiddleware())
 
 
 
-@dp.message_handler(commands=['start', 'help'])
+@dp.message_handler(commands=['help'])
+async def send_help(message: types.Message):
+    """
+    This handler will be called when user sends `/help` command
+    """
+    await message.reply("this is a help response")
+
+
+@dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
     """
-    This handler will be called when user sends `/start` or `/help` command
+    This handler will be called when user sends `/start`  command
     """
-    await message.reply("Hi!\nI'm EchoBot!\nPowered by aiogram.")
+    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, 
+                                         one_time_keyboard=True)
+    buttons = ["Create new optimization", "Continue ...", "/help"]
+    keyboard.add(*buttons)
+    await message.answer("Hi!\nI'm choice_optimizer bot!\nSelect what you want to do?", reply_markup=keyboard)    
+
+
+@dp.message_handler(commands="answer")
+async def cmd_answer(message: types.Message):
+    await message.answer("Это простой ответ")
 
 @dp.message_handler()
 async def echo(message: types.Message):
