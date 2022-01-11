@@ -12,10 +12,6 @@ from bot.drinks import register_handlers_drinks
 from bot.food import register_handlers_food
 from bot.common import register_handlers_common
 
-bot = Bot(token=BOT_TOKEN)
-dp = Dispatcher(bot)
-dp.middleware.setup(LoggingMiddleware())
-
 async def set_commands(bot: Bot):
     commands = [
         BotCommand(command="/drinks", description="Заказать напитки"),
@@ -31,6 +27,11 @@ async def set_commands(bot: Bot):
 
     # Установка команд бота
     await set_commands(bot)
+
+bot = Bot(token=BOT_TOKEN)
+set_commands(bot)
+dp = Dispatcher(bot)
+dp.middleware.setup(LoggingMiddleware())
 
 @dp.message_handler(commands=['help'])
 async def send_help(message: types.Message):
@@ -71,7 +72,7 @@ async def on_shutdown(dp):
     logging.warning('Bye! Shutting down webhook connection')
 
 
-async def main():
+def main():
     logging.basicConfig(level=logging.INFO)
     start_webhook(
         dispatcher=dp,
@@ -81,4 +82,3 @@ async def main():
         host=WEBAPP_HOST,
         port=WEBAPP_PORT,
     )
-    await set_commands(bot)
