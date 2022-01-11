@@ -1,18 +1,36 @@
 import logging
-
+from aiogram.types import BotCommand
 from aiogram import Bot, types
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.dispatcher import Dispatcher
 from aiogram.utils.executor import start_webhook
 from bot.settings import (BOT_TOKEN, HEROKU_APP_NAME,
                           WEBHOOK_URL, WEBHOOK_PATH,
-                          WEBAPP_HOST, WEBAPP_PORT)
+                          WEBAPP_HOST, WEBAPP_PORT, ADMIN_ID)
+
+from bot.drinks import register_handlers_drinks
+from bot.food import register_handlers_food
+from bot.common import register_handlers_common
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(bot)
 dp.middleware.setup(LoggingMiddleware())
 
+async def set_commands(bot: Bot):
+    commands = [
+        BotCommand(command="/drinks", description="Заказать напитки"),
+        BotCommand(command="/food", description="Заказать блюда"),
+        BotCommand(command="/cancel", description="Отменить текущее действие")
+    ]
+    await bot.set_my_commands(commands)
 
+    # Регистрация хэндлеров
+    register_handlers_common(dp, ADMIN_ID)
+    register_handlers_drinks(dp)
+    register_handlers_food(dp)
+
+    # Установка команд бота
+    await set_commands(bot)
 
 @dp.message_handler(commands=['help'])
 async def send_help(message: types.Message):
