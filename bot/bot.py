@@ -71,7 +71,7 @@ async def on_shutdown(dp):
     logging.warning('Bye! Shutting down webhook connection')
 
 
-def main():
+async def main():
     logging.basicConfig(level=logging.INFO)
     start_webhook(
         dispatcher=dp,
@@ -81,3 +81,4 @@ def main():
         host=WEBAPP_HOST,
         port=WEBAPP_PORT,
     )
+    await set_commands(bot)
