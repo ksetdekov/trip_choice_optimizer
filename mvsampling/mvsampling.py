@@ -73,7 +73,7 @@ class HandsTable():
         self.hands.loc[self.hands.name == name, 'beta'] = beta
     
     def grade(self):
-        hands_output = self.hands
+        hands_output = self.hands.copy()
         tau = gamma.rvs( a = hands_output.alpha, scale=1/hands_output.beta)
         theta_drops = norm.rvs(hands_output.mu, 1/hands_output.Te)
         hands_output['tau'] = tau
