@@ -7,7 +7,14 @@ class HandsTable():
     minimize = True
     rho=3.37
 
-    def __init__(self, options_list, minimize=True, rho=None):
+    def __init__(self, options_list, minimize=True, rho=1.0):
+        """инициализация
+
+        Args:
+            options_list (list): список из названий
+            minimize (bool, optional): Минимизировать если True, максимизировать если False. Defaults to True.
+            rho (float, optional): Риск толерантность, чем больше, тем больше риска готовы принять. Defaults to 1.0.
+        """         
         self.hands = pd.DataFrame({'name': options_list,
                                    'mu': 0, 
                                    'Te': 0, 
