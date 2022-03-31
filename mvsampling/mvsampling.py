@@ -100,16 +100,3 @@ class HandsTable():
 
     def __str__(self):
         return repr(self.hands)
-
-a = HandsTable(['1', '2'], minimize=False)
-
-# print(a)
-
-a.update_hands('2', 100)
-a.update_hands('2', 90)
-a.update_hands('1', 80)
-a.update_hands('1', 70)
-
-# print(a)
-
-print(a.grade())

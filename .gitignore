@@ -128,3 +128,18 @@ dmypy.json
 # Pyre type checker
 .pyre/
 /config_my.py
+tripchoice_venv/pyvenv.cfg
+tripchoice_venv/bin/activate
+tripchoice_venv/bin/activate.csh
+tripchoice_venv/bin/activate.fish
+tripchoice_venv/bin/Activate.ps1
+tripchoice_venv/bin/easy_install
+tripchoice_venv/bin/easy_install-3.8
+tripchoice_venv/bin/f2py
+tripchoice_venv/bin/f2py3
+tripchoice_venv/bin/f2py3.8
+tripchoice_venv/bin/pip
+tripchoice_venv/bin/pip3
+tripchoice_venv/bin/pip3.8
+tripchoice_venv/bin/python
+tripchoice_venv/bin/python3
