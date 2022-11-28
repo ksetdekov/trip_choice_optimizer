@@ -1,4 +1,3 @@
-from curses import def_prog_mode
 import pandas as pd
 import numpy as np
 from scipy.stats import gamma, norm
