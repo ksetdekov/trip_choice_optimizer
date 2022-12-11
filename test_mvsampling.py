@@ -35,6 +35,10 @@ class Test_TestIncrementDecrement(unittest.TestCase):
         c = a.grade()
         self.assertFalse(b.equals(c))
 
+    def test_update_shape(self):
+        a = mv.HandsTable(['1', '2'], minimize=False)
+        b = a.update_shape(10)
+        self.assertEquals(b, 10.5)
 
 if __name__ == '__main__':
     unittest.main()
