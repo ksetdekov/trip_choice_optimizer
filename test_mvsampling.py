@@ -1,6 +1,9 @@
-import mvsampling.mvsampling as mv # The code to test
+import unittest  # The test framework
+
 import pandas as pd
-import unittest   # The test framework
+
+import mvsampling.mvsampling as mv  # The code to test
+
 
 class Test_TestIncrementDecrement(unittest.TestCase):
     def test_has_needed_columns(self):
