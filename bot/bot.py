@@ -1,6 +1,8 @@
-from settings import (BOT_TOKEN)
 import asyncio
+
 from aiogram import Bot, Dispatcher, types
+from settings import BOT_TOKEN
+
 
 async def start_handler(event: types.Message):
     await event.answer(
@@ -8,11 +10,17 @@ async def start_handler(event: types.Message):
         parse_mode=types.ParseMode.HTML,
     )
 
+async def echo_answer(event: types.Message):
+    await event.answer(event.text, parse_mode=types.ParseMode.HTML
+    )
+
+
 async def main():
     bot = Bot(token=BOT_TOKEN)
     try:
         disp = Dispatcher(bot=bot)
         disp.register_message_handler(start_handler, commands={"start", "restart"})
+        disp.register_message_handler(echo_answer, lambda msg: msg.text)
         await disp.start_polling()
     finally:
         await bot.close()
