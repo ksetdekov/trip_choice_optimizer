@@ -144,3 +144,4 @@ tripchoice_venv/bin/pip3.8
 tripchoice_venv/bin/python
 tripchoice_venv/bin/python3
 db/pythonsqlite.db
+secrets.sh
