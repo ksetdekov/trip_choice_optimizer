@@ -62,33 +62,35 @@ async def cancel_handler(message: Message, state: FSMContext) -> None:
     )
 
 
-# @form_router.message(Form.name)
-# async def process_name(message: Message, state: FSMContext) -> None:
-#     await state.update_data(name=message.text)
-#     await state.set_state(Form.options)
-#     await message.answer(
-#         f"Ок, оптимизируем: {html.quote(message.text)}!\nА какие варианты ответов будут?",
-#         reply_markup=ReplyKeyboardMarkup(
-#             keyboard=[
-#                 [
-#                     KeyboardButton(text="Yes"),
-#                     KeyboardButton(text="No"),
-#                 ]
-#             ],
-#             resize_keyboard=True,
-#         ),
-#     )
+
 
 @form_router.message(Form.name)
 async def process_name(message: Message, state: FSMContext) -> None:
-    await state.update_data(options=message.text)
+    await state.update_data(name=message.text)
     await state.set_state(Form.options)
     await message.answer(
         "Перечисли через запятую варианты ответов",
-        reply_markup=ReplyKeyboardRemove(),
+        reply_markup=ReplyKeyboardRemove(remove_keyboard=True),
     )
     data = await state.get_data()
+    logging.info(data)
+    await state.set_state(Form.options)
+    # await show_summary(message=message, data=data)
+
+
+
+@form_router.message(Form.options)
+async def process_options(message: Message, state: FSMContext) -> None:
+    data = await state.update_data(language=message.text)
+    await state.clear()
+    text = (
+        "Thank for all! Python is in my hearth!\nSee you soon."
+        if message.text.casefold() == "python"
+        else "Thank for information!\nSee you soon."
+    )
+    await message.answer(text)
     await show_summary(message=message, data=data)
+    )
 
 # @form_router.message(Form.like_bots, F.text.casefold() == "no")
 # async def process_dont_like_write_bots(message: Message, state: FSMContext) -> None:
@@ -132,7 +134,7 @@ async def process_name(message: Message, state: FSMContext) -> None:
 async def show_summary(message: Message, data: Dict[str, Any], positive: bool = True) -> None:
     name = data["name"]
     list_of_options = data.get("language", "<something unexpected>")
-    text = f"оптимизируем: {html.quote(data)}, "
+    text = f"оптимизируем: {html.quote(name)}, "
     
     await message.answer(text=text, reply_markup=ReplyKeyboardRemove())
 
