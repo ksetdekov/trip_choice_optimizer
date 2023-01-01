@@ -90,7 +90,7 @@ async def process_options(message: Message, state: FSMContext) -> None:
     )
     await message.answer(text)
     await show_summary(message=message, data=data)
-    )
+    
 
 # @form_router.message(Form.like_bots, F.text.casefold() == "no")
 # async def process_dont_like_write_bots(message: Message, state: FSMContext) -> None:
