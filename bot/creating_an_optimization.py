@@ -14,6 +14,7 @@ risk_tolerance_options = ["Стандартная", "Низкая", "Высок�
 # based on https://github.com/aiogram/aiogram/blob/dev-3.x/examples/finite_state_machine.py
 risk_tolerance_mapping = {"Стандартная": 1, "Низкая": 1/3.37, "Высокая": 3.37}
 
+import sqlite3
 
 form_router = Router()
 
@@ -24,6 +25,104 @@ class Form(StatesGroup):
     options_check = State()
     maximize = State()
     risk_tolerance = State()
+
+db_name = 'optimizations.db'
+
+# create a database with the following fields:
+# user_id
+# optimization_name
+# optimization_options
+# optimization_direction
+# risk_tolerance
+# optimization_result
+# optimization_date
+
+def create_db(db_name):
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS optimization (
+            user_id INTEGER,
+            optimization_name TEXT,
+            optimization_options TEXT,
+            optimization_direction TEXT,
+            risk_tolerance TEXT,
+            optimization_result TEXT,
+            optimization_date TEXT
+        )
+        """
+    )
+    conn.commit()
+    conn.close()
+
+
+# check if a database has not beet created yet by looking for relevant file with db_name
+# if it has not been created yet, then create it
+
+try:
+    open(db_name)
+except FileNotFoundError:
+    create_db(db_name)
+  
+
+# create a write_to_db function that will write the data to the database
+# the function should take the following arguments:
+# user_id
+# optimization_name
+# optimization_options
+# optimization_direction
+# risk_tolerance
+# optimization_result, optional
+# optimization_date, optional, set to None by default
+# the function should return None
+
+def write_to_db(user_id, optimization_name, optimization_options, optimization_direction, risk_tolerance, optimization_result=None, optimization_date=None):
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        INSERT INTO optimization (user_id, optimization_name, optimization_options, optimization_direction, risk_tolerance, optimization_result, optimization_date)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (user_id, optimization_name, optimization_options, optimization_direction, risk_tolerance, optimization_result, optimization_date)
+    )
+    conn.commit()
+    conn.close()
+
+
+
+
+
+@form_router.message(Command(commands=["start"]))
+async def start(message: Message) -> None:
+    # check how many times the user has used the bot
+    # if it is the first time, then send a welcome message and record the user in the database
+    # if it is not the first time, then send a message that the user has already been recorded
+    # the message should contain the number of times the user has used the bot
+    # the message should contain the number of times the user has used the bot
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT COUNT(*)
+        FROM optimization
+        WHERE user_id = ?
+        """,
+        (message.from_user.id,)
+    )
+    count = cursor.fetchone()[0]
+    conn.close()
+    if count == 0:
+        await message.answer(
+            f"Привет, {message.from_user.full_name}!\n"
+            "Я бот, который поможет тебе оптимизировать любые процессы.\n"
+            "Для того, чтобы начать оптимизацию, напиши /new\n"
+            "Для того, чтобы увидеть все оптимизации, напиши /show\n"
+            "Для того, чтобы увидеть результат оптимизации, напиши /result\n"
+            "Для того, чтобы отменить оптимизацию, напиши /cancel\n"
+        )
+        write_to_db(message.from_user.id, None, None, None, None)
 
 
 @form_router.message(Command(commands=["new"]))
@@ -169,6 +268,8 @@ async def show_summary(message: Message, data: Dict[str, Any]) -> None:
     logging.info(list_of_options)
     text = f"оптимизируем: {html.quote(name)}, опции - {list_of_options}. Будет максимизация {data.get('maximize')}, Риск-толерантность {data.get('risk_tolerance')}"
 
+    # recored to db the data collected
+    
     await message.answer(text=text, reply_markup=ReplyKeyboardRemove(remove_keyboard=True))
 
 
