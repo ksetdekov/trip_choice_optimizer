@@ -1,6 +1,9 @@
-import mvsampling.mvsampling as mv # The code to test
+import unittest  # The test framework
+
 import pandas as pd
-import unittest   # The test framework
+
+import mvsampling.mvsampling as mv  # The code to test
+
 
 class Test_TestIncrementDecrement(unittest.TestCase):
     def test_has_needed_columns(self):
@@ -35,6 +38,10 @@ class Test_TestIncrementDecrement(unittest.TestCase):
         c = a.grade()
         self.assertFalse(b.equals(c))
 
+    def test_update_shape(self):
+        a = mv.HandsTable(['1', '2'], minimize=False)
+        b = a.update_shape(10)
+        self.assertEquals(b, 10.5)
 
 if __name__ == '__main__':
     unittest.main()
