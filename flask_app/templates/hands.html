@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HandsTable Data</title>
+</head>
+<body>
+    <h1>HandsTable Data</h1>
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Mean</th>
+            <th>Variance</th>
+            <!-- Add more columns here as needed -->
+        </tr>
+        {% for row in hands_data %}
+            <tr>
+                <td>{{ row['name'] }}</td>
+                <td>{{ row['mu'] }}</td>
+                <td>{{ row['Te'] }}</td>
+                <!-- Add more columns here as needed -->
+            </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
+
+<form action="/update" method="post">
+    <label for="name">Option Name:</label>
+    <input type="text" name="name" required><br>
+    <label for="value">Value:</label>
+    <input type="text" name="value" required><br>
+    <input type="submit" value="Update">
+</form>
