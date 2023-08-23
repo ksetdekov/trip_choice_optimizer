@@ -1,10 +1,11 @@
 FROM python:3.8
-
+COPY ./requirements.txt /app/requirements.txt
 WORKDIR /app
 
-COPY requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt
 
-COPY . /app/
+COPY . /app
 
-CMD ["python", "main_app.py"]
+# configure the container to run in an executed manner
+ENTRYPOINT [ "python" ]
+CMD ["view.py" ]
