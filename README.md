@@ -9,7 +9,8 @@ bot part based on code from <https://github.com/aahnik/webhook-aiogram-heroku>
 `export BOT_TOKEN=`
 
 2. проверить, что эхо работает - done 
-3. пройти туториал <https://mastergroosha.github.io/telegram-tutorial-2/fsm/> - 
+3. пройти туториал <https://mastergroosha.github.io/telegram-tutorial-2/fsm/> - done
+4. пройти курс по flask <https://stepik.org/lesson/535658/step/2?unit=528764>
 3. сделать без записи в базу создание новой оптимизации
 3. добавить функционал хранения данных
 4. реализовать бота, который для всех людей оптимизации держит в 1 базе
