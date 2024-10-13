@@ -109,7 +109,7 @@ async def start(message: Message) -> None:
         FROM optimization
         WHERE user_id = ?
         """,
-        (message.from_user.id,)
+        (message.from_user.id,) # type: ignore
     )
     count = cursor.fetchone()[0]
     conn.close()
