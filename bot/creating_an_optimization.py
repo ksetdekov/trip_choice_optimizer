@@ -114,15 +114,21 @@ async def start(message: Message) -> None:
     count = cursor.fetchone()[0]
     conn.close()
     if count == 0:
+        user_name = message.from_user.full_name if message.from_user and message.from_user.full_name else "пользователь"
         await message.answer(
-            f"Привет, {message.from_user.full_name}!\n"
+            f"Привет, {user_name}!\n"
             "Я бот, который поможет тебе оптимизировать любые процессы.\n"
             "Для того, чтобы начать оптимизацию, напиши /new\n"
             "Для того, чтобы увидеть все оптимизации, напиши /show\n"
             "Для того, чтобы увидеть результат оптимизации, напиши /result\n"
             "Для того, чтобы отменить оптимизацию, напиши /cancel\n"
         )
-        write_to_db(message.from_user.id, None, None, None, None)
+        if message.from_user:
+                    write_to_db(message.from_user.id, "default_name", "default_options", "default_direction", "default_risk_tolerance")
+        else:
+            await message.answer(
+                f"Вы уже использовали бота {count} раз(а)."
+            )
 
 
 @form_router.message(Command(commands=["new"]))
@@ -284,3 +290,4 @@ async def main():
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     asyncio.run(main())
+
