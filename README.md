@@ -1,7 +1,8 @@
 # trip_choice_optimizer
 
-find best commute using Thompson Sampling algorithms for Mean-Variance Bandits (<https://arxiv.org/pdf/2002.00232.pdf>)
-
-bot part based on code from <https://github.com/aahnik/webhook-aiogram-heroku>
+find best options of an list of commute options using Thompson Sampling algorithms for Mean-Variance Bandits (<https://arxiv.org/pdf/2002.00232.pdf>)
 
 ## TODO
+
+- [ ] Update bot.py to be able to create variants in an optimization.
+- [x] Update bot.py to be able to create a new optimization.

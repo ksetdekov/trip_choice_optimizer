@@ -27,12 +27,16 @@ optimizations_db = DatabaseDriver()
 class NewOptimization(StatesGroup):
     waiting_for_name = State()
 
+class NewVariant(StatesGroup):
+    waiting_for_optimization_name = State()
+    waiting_for_variant_name = State()
+
 @dp.message(Command("start"))
 async def start_command(message: types.Message):
     await message.answer(
         """Hello! I am your trip choice optimizer bot. 
 I use Thompson Sampling algorithms for Mean-Variance Bandits to find the best options for your task, as described in the paper (https://arxiv.org/pdf/2002.00232.pdf). 
-My optimization logic is implemented in the 'mvsampling' module. An example of this optimization is shown in this kaggle notebook  <a href="https://www.kaggle.com/code/ksetdekov/coffee-amount-optimization">ksetdekov/coffee-amount-optimization</a>. 
+My optimization logic is implemented in the 'mvsampling' module. An example of this optimization is shown in this <a href="https://www.kaggle.com/code/ksetdekov/coffee-amount-optimization">kaggle notebook</a>. 
 Send /help to see what I can do."""
     )
 
@@ -49,9 +53,31 @@ async def process_new_optimization(message: types.Message, state: FSMContext):
     await message.answer(f"Your new optimization '{optimization_name}' has been saved in the database. \n All your optimizations: {all_optimizations_for_this_user}")
     await state.clear()
 
+@dp.message(Command("add_variant"))
+async def add_variant_command(message: types.Message, state: FSMContext):
+    await message.answer("Please provide the name of the optimization to which you want to add a variant:")
+    await state.set_state(NewVariant.waiting_for_optimization_name)
+
+@dp.message(NewVariant.waiting_for_optimization_name)
+async def process_variant_optimization(message: types.Message, state: FSMContext):
+    optimization_name = message.text.strip()  # type: ignore
+    await state.update_data(optimization_name=optimization_name)
+    await message.answer("Please provide the variant name or details:")
+    await state.set_state(NewVariant.waiting_for_variant_name)
+
+@dp.message(NewVariant.waiting_for_variant_name)
+async def process_new_variant(message: types.Message, state: FSMContext):
+    variant_name = message.text.strip()  # type: ignore
+    data = await state.get_data()
+    optimization_name = data.get("optimization_name")
+    optimizations_db.add_variant(optimization_name, variant_name, message.from_user.id)  # type: ignore
+    variants = optimizations_db.get_variants(optimization_name, message.from_user.id)  # type: ignore
+    await message.answer(f"Variant '{variant_name}' added to optimization '{optimization_name}'.\nAll variants for this optimization: {variants}")
+    await state.clear()
+
 @dp.message()  # new handler for unmatched messages
 async def default_handler(message: types.Message):
-    await message.answer("I didn't understand that command. Please use /start or /new.")
+    await message.answer("I didn't understand that command. Please use /start, /new, or /add_variant.")
 
 if __name__ == "__main__":
     dp.run_polling(bot)
