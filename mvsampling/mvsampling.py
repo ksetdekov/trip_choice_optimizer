@@ -1,31 +1,26 @@
 import pandas as pd
 import numpy as np
 from scipy.stats import gamma, norm
-from datetime import  timedelta
+from datetime import timedelta
+from dataclasses import dataclass, field
 
-class HandsTable():
-    minimize = True
-    rho = 3.37
+@dataclass
+class HandsTable:
+    options_list: list
+    minimize: bool = True
+    rho: float = 3.37
+    hands: pd.DataFrame = field(init=False)
+    history: pd.DataFrame = field(default_factory=lambda: pd.DataFrame(columns=['option', 'value']))
 
-    def __init__(self, options_list, minimize=True, rho=1.0):
-        """инициализация
-
-        Args:
-            options_list (list): список из названий
-            minimize (bool, optional): Минимизировать если True, максимизировать если False. Defaults to True.
-            rho (float, optional): Риск толерантность, чем больше, тем больше риска готовы принять. Defaults to 1.0.
-        """
-        self.hands = pd.DataFrame({'name': options_list,
+    def __post_init__(self):
+        self.hands = pd.DataFrame({'name': self.options_list,
                                    'mu': 0.0,
                                    'Te': 0,
                                    'alpha': 0.5,
                                    'beta': 0.5
                                    })
-        self.minimize = minimize
-        if rho is not None:
-            self.rho = rho
-
-        self.history = pd.DataFrame(columns=['option', 'value'])
+        if self.rho is not None:
+            self.rho = self.rho
 
     @classmethod
     def to_minutes(cls, timestr: str):
