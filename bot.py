@@ -7,6 +7,8 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
 from database_driver import DatabaseDriver
+from aiogram.utils.keyboard import InlineKeyboardBuilder 
+from aiogram.types import CallbackQuery 
 
 # Load environment variables from .env file
 load_dotenv()
@@ -55,8 +57,33 @@ async def process_new_optimization(message: types.Message, state: FSMContext):
 
 @dp.message(Command("add_variant"))
 async def add_variant_command(message: types.Message, state: FSMContext):
-    await message.answer("Please provide the name of the optimization to which you want to add a variant:")
-    await state.set_state(NewVariant.waiting_for_optimization_name)
+    optimizations = optimizations_db.get_optimizations(message.from_user.id) # type: ignore
+    if optimizations:
+        keyboard = InlineKeyboardBuilder()
+        for optimization in optimizations:
+            optimization_name = optimization[0]
+            keyboard.button(
+                text=optimization_name,
+                callback_data=f"select_optimization:{optimization_name}"
+            )
+        keyboard.adjust(1)  # one button per row
+        await message.answer(
+            "Please select the optimization to which you want to add a variant:",
+            reply_markup=keyboard.as_markup()
+        )
+    else:
+        await message.answer("You don't have any optimizations yet. Please create one with /new.")
+
+@dp.callback_query(lambda callback: callback.data and callback.data.startswith("select_optimization:"))
+async def process_select_optimization(callback_query: CallbackQuery, state: FSMContext):
+    # Extract the optimization name from the callback data
+    optimization_name = callback_query.data.split(":", 1)[1] # type: ignore
+    await state.update_data(optimization_name=optimization_name)
+    await callback_query.message.edit_text( # type: ignore
+        f"Selected optimization: {optimization_name}\nPlease provide the variant name or details:"
+    )
+    await state.set_state(NewVariant.waiting_for_variant_name)
+    await callback_query.answer()
 
 @dp.message(NewVariant.waiting_for_optimization_name)
 async def process_variant_optimization(message: types.Message, state: FSMContext):
