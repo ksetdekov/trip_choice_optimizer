@@ -28,27 +28,27 @@ class HandsTable():
         self.history = pd.DataFrame(columns=['option', 'value'])
 
     @classmethod
-    def to_minutes(self, timestr: str):
+    def to_minutes(cls, timestr: str):
         '''
         convert timestr to float minutes
         '''
         return pd.to_timedelta(timestr).total_seconds()/60
 
     @classmethod
-    def update_mean(self, X, T_last, mu_last):
+    def update_mean(cls, X, T_last, mu_last):
         mu_new = T_last * mu_last / (T_last + 1) + X / (T_last + 1)
         return mu_new
 
     @classmethod
-    def update_samples(self, T):
+    def update_samples(cls, T):
         return T + 1
 
     @classmethod
-    def update_shape(self, a):
+    def update_shape(cls, a):
         return a + 0.5
 
     @classmethod
-    def update_rate(self, X, mu_last, beta_last, T_last):
+    def update_rate(cls, X, mu_last, beta_last, T_last):
         beta_new = beta_last + (T_last / (T_last + 1)) * \
             (np.square(X - mu_last)) / 2
         return beta_new
