@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
+from database_driver import DatabaseDriver
 
 # Load environment variables from .env file
 load_dotenv()
@@ -21,7 +22,7 @@ storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 
 # Simulated database to store optimizations
-optimizations_db = []  
+optimizations_db = DatabaseDriver()
 
 class NewOptimization(StatesGroup):
     waiting_for_name = State()
@@ -43,8 +44,9 @@ async def new_optimization_command(message: types.Message, state: FSMContext):
 @dp.message(NewOptimization.waiting_for_name)
 async def process_new_optimization(message: types.Message, state: FSMContext):
     optimization_name = message.text.strip() # type: ignore
-    optimizations_db.append(optimization_name)
-    await message.answer(f"Your new optimization '{optimization_name}' has been saved in the database.")
+    optimizations_db.add_optimization(optimization_name, message.from_user.id) # type: ignore
+    all_optimizations_for_this_user = optimizations_db.get_optimizations(message.from_user.id) # type: ignore
+    await message.answer(f"Your new optimization '{optimization_name}' has been saved in the database. \n All your optimizations: {all_optimizations_for_this_user}")
     await state.clear()
 
 @dp.message()  # new handler for unmatched messages

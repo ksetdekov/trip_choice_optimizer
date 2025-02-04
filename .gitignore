@@ -147,3 +147,4 @@ db/pythonsqlite.db
 
 # Custom environment variable file
 .env
+main_db.db
