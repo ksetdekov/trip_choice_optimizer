@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from scipy.stats import gamma, norm
-
+from datetime import  timedelta
 
 class HandsTable():
     minimize = True
@@ -16,7 +16,7 @@ class HandsTable():
             rho (float, optional): Риск толерантность, чем больше, тем больше риска готовы принять. Defaults to 1.0.
         """
         self.hands = pd.DataFrame({'name': options_list,
-                                   'mu': 0,
+                                   'mu': 0.0,
                                    'Te': 0,
                                    'alpha': 0.5,
                                    'beta': 0.5
@@ -105,6 +105,15 @@ class HandsTable():
                     np.argsort(self.rho * theta_drops - 1/tau)[::-1])
 
         return output_df
+
+    def process_events(self, events, days=91):
+        """Filter events and update hands"""
+        oldest_ok = max(events) - timedelta(days=days)
+        filtered_events = {k: v for k, v in events.items() if k > oldest_ok}
+
+        for category, value in filtered_events.values():
+            self.update_hands(category, value)
+        return self.grade()
 
     def __str__(self):
         return repr(self.hands)
