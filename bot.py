@@ -79,9 +79,12 @@ async def process_select_optimization(callback_query: CallbackQuery, state: FSMC
     # Extract the optimization name from the callback data
     optimization_name = callback_query.data.split(":", 1)[1] # type: ignore
     await state.update_data(optimization_name=optimization_name)
-    await callback_query.message.edit_text( # type: ignore
-        f"Selected optimization: {optimization_name}\nPlease provide the variant name or details:"
-    )
+    if callback_query.message:
+        await callback_query.message.edit_text( # type: ignore
+            f"Selected optimization: {optimization_name}\nPlease provide the variant name or details:"
+        )
+    else:
+        await callback_query.answer("Selected optimization, but no message found to edit.")
     await state.set_state(NewVariant.waiting_for_variant_name)
     await callback_query.answer()
 
@@ -127,9 +130,15 @@ async def process_delete_optimization(callback_query: CallbackQuery):
     optimization_name = callback_query.data.split(":", 1)[1]  # type: ignore
     # Remove the selected optimization
     optimizations_db.remove_optimization(optimization_name, callback_query.from_user.id)  # type: ignore
-    await callback_query.message.edit_text(
-        f"The optimization '{optimization_name}' has been deleted."
-    )
+    if callback_query.message:
+        await callback_query.message.edit_text(
+            f"The optimization '{optimization_name}' has been deleted."
+        )
+    else:
+        await bot.send_message(
+            callback_query.from_user.id,
+            f"The optimization '{optimization_name}' has been deleted."
+        )
     await callback_query.answer()
 
 @dp.message()  # new handler for unmatched messages
