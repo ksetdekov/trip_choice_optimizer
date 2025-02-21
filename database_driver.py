@@ -80,6 +80,20 @@ class DatabaseDriver:
         )
         return self.cursor.fetchall()
     
+    def remove_optimization(self, optimization_name, user_id):
+        """
+        Remove a specific optimization by its name and user ID.
+        """
+        # Optionally, remove associated variants here if desired
+        self.cursor.execute(
+            '''
+            DELETE FROM user_optimization
+            WHERE optimization_name = ? AND user_id = ?
+            ''',
+            (optimization_name, user_id)
+        )
+        self.conn.commit()
+    
     def close(self):
         self.conn.close()
 
