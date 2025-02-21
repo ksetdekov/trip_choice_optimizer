@@ -102,6 +102,36 @@ async def process_new_variant(message: types.Message, state: FSMContext):
     await message.answer(f"Variant '{variant_name}' added to optimization '{optimization_name}'.\nAll variants for this optimization: {variants}")
     await state.clear()
 
+@dp.message(Command("delete_optimization"))
+async def delete_optimization_command(message: types.Message):
+    optimizations = optimizations_db.get_optimizations(message.from_user.id)  # type: ignore
+    if optimizations:
+        keyboard = InlineKeyboardBuilder()
+        for optimization in optimizations:
+            optimization_name = optimization[0]
+            keyboard.button(
+                text=optimization_name,
+                callback_data=f"delete_optimization:{optimization_name}"
+            )
+        keyboard.adjust(1)  # one button per row
+        await message.answer(
+            "Please select the optimization you want to delete:",
+            reply_markup=keyboard.as_markup()
+        )
+    else:
+        await message.answer("You don't have any optimizations to delete.")
+
+@dp.callback_query(lambda callback: callback.data and callback.data.startswith("delete_optimization:"))
+async def process_delete_optimization(callback_query: CallbackQuery):
+    # Extract the optimization name from the callback data
+    optimization_name = callback_query.data.split(":", 1)[1]  # type: ignore
+    # Remove the selected optimization
+    optimizations_db.remove_optimization(optimization_name, callback_query.from_user.id)  # type: ignore
+    await callback_query.message.edit_text(
+        f"The optimization '{optimization_name}' has been deleted."
+    )
+    await callback_query.answer()
+
 @dp.message()  # new handler for unmatched messages
 async def default_handler(message: types.Message):
     await message.answer("I didn't understand that command. Please use /start, /new, or /add_variant.")
