@@ -11,6 +11,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import CallbackQuery 
 from datetime import datetime, timedelta
 import mvsampling.mvsampling as mv  # ensure this import is correct
+from tabulate import tabulate
 
 # Load environment variables from .env file
 load_dotenv()
@@ -248,17 +249,20 @@ async def process_add_observation(callback_query: CallbackQuery, state: FSMConte
         events[dt_obj] = (opt_name, float(option_value))
     
     # Create an instance of HandsTable (adjust the options list and minimize flag as required)
-    a = mv.HandsTable(['1', '2'], minimize=False)
-    result = a.process_events(events)
-    result_str = result.to_string()
+    # get the options list from the database
+    options_list = [variant[0] for variant in optimizations_db.get_variants(optimization_name, user_id)]
+    a = mv.HandsTable(options_list=options_list, minimize=False)
+    result = a.process_events(events)[['name', 'mu', 'var95']]
+
+    result_str = tabulate(result, headers='keys', showindex=False, tablefmt='pretty') # type: ignore
     
     # Edit the message with the processed result
     if callback_query.message:
         await callback_query.message.edit_text(
-            f"Processed observation result for '{optimization_name}':\n{result_str}"
+            f"Processed observation result for '{optimization_name}':\n<pre>{result_str}</pre>\nBest option: {result.iloc[0]['name']}"
         )
     else:
-        await bot.send_message(user_id, f"Processed observation result for '{optimization_name}':\n{result_str}")
+        await bot.send_message(user_id, f"Processed observation result for '{optimization_name}':\n<pre>{result_str}</pre>\nBest option: {result.iloc[0]['name']}")
     
     await callback_query.answer()
 
@@ -270,7 +274,8 @@ async def default_handler(message: types.Message):
         "- /new: Create a new optimization\n"
         "- /add_variant: Add a variant to an optimization\n"
         "- /delete_variant: Delete a variant from an optimization\n"
-        "- /delete_optimization: Delete an entire optimization"
+        "- /delete_optimization: Delete an entire optimization\n"
+        "- /add_observation: Add an observation for an optimization"
     )
 
 if __name__ == "__main__":

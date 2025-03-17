@@ -5,3 +5,4 @@ aiogram~=3.0.0
 scipy~=1.9.3
 coverage~=6.5.0
 python_dotenv~=1.0.1
+tabulate~=0.9.0
