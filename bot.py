@@ -105,6 +105,71 @@ async def process_new_variant(message: types.Message, state: FSMContext):
     await message.answer(f"Variant '{variant_name}' added to optimization '{optimization_name}'.\nAll variants for this optimization: {variants}")
     await state.clear()
 
+# remove optimization variants in the same way as optimizations
+@dp.message(Command("delete_variant"))
+async def delete_variant_command(message: types.Message, state: FSMContext):
+    # Fetch all optimizations for the user
+    optimizations = optimizations_db.get_optimizations(message.from_user.id)  # type: ignore
+    keyboard = InlineKeyboardBuilder()
+    found_any = False
+    for optimization in optimizations:
+        optimization_name = optimization[0]
+        # Check if the optimization has any variants
+        variants = optimizations_db.get_variants(optimization_name, message.from_user.id)  # type: ignore
+        if variants:
+            found_any = True
+            keyboard.button(
+                text=optimization_name,
+                callback_data=f"delete_variant_opt:{optimization_name}"
+            )
+    if not found_any:
+        await message.answer("No variants found for any optimization.")
+    else:
+        keyboard.adjust(1)  # one button per row
+        await message.answer(
+            "Please select the optimization from which you want to delete a variant:",
+            reply_markup=keyboard.as_markup()
+        )
+
+@dp.callback_query(lambda callback: callback.data and callback.data.startswith("delete_variant_opt:"))
+async def process_delete_variant_selection(callback_query: CallbackQuery, state: FSMContext):
+    # Extract the selected optimization name.
+    optimization_name = callback_query.data.split(":", 1)[1]
+    # Build a keyboard with the list of variants for this optimization.
+    variants = optimizations_db.get_variants(optimization_name, callback_query.from_user.id)  # type: ignore
+    if not variants:
+        await callback_query.answer("No variants found for the selected optimization.", show_alert=True)
+        return
+    keyboard = InlineKeyboardBuilder()
+    for variant in variants:
+        variant_name = variant[0]
+        keyboard.button(
+            text=variant_name,
+            callback_data=f"delete_variant:{optimization_name}:{variant_name}"
+        )
+    keyboard.adjust(1)
+    await callback_query.message.edit_text(
+        f"Select the variant to delete from optimization '{optimization_name}':",
+        reply_markup=keyboard.as_markup()
+    )
+    await callback_query.answer()
+
+@dp.callback_query(lambda callback: callback.data and callback.data.startswith("delete_variant:"))
+async def process_delete_variant(callback_query: CallbackQuery):
+    # Expected callback data format: delete_variant:{optimization_name}:{variant_name}
+    parts = callback_query.data.split(":", 2)
+    if len(parts) < 3:
+        await callback_query.answer("Invalid callback data.", show_alert=True)
+        return
+    optimization_name = parts[1]
+    variant_name = parts[2]
+    # Remove the selected variant from the database. Ensure that your DatabaseDriver has a remove_variant method.
+    optimizations_db.remove_variant(optimization_name, variant_name, callback_query.from_user.id)  # type: ignore
+    await callback_query.message.edit_text(
+        f"Variant '{variant_name}' has been deleted from optimization '{optimization_name}'."
+    )
+    await callback_query.answer()
+
 @dp.message(Command("delete_optimization"))
 async def delete_optimization_command(message: types.Message):
     optimizations = optimizations_db.get_optimizations(message.from_user.id)  # type: ignore
@@ -143,7 +208,14 @@ async def process_delete_optimization(callback_query: CallbackQuery):
 
 @dp.message()  # new handler for unmatched messages
 async def default_handler(message: types.Message):
-    await message.answer("I didn't understand that command. Please use /start, /new, or /add_variant.")
+    await message.answer(
+        "I didn't understand that command. Please use one of the following commands:\n"
+        "- /start: Show the welcome message and available commands\n"
+        "- /new: Create a new optimization\n"
+        "- /add_variant: Add a variant to an optimization\n"
+        "- /delete_variant: Delete a variant from an optimization\n"
+        "- /delete_optimization: Delete an entire optimization"
+    )
 
 if __name__ == "__main__":
     dp.run_polling(bot)

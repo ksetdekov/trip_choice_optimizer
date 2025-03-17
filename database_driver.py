@@ -94,6 +94,19 @@ class DatabaseDriver:
         )
         self.conn.commit()
     
+    def remove_variant(self, optimization_name, variant_name, user_id):
+        """
+        Remove a specific variant from an optimization.
+        """
+        self.cursor.execute(
+            '''
+            DELETE FROM optimization_variant
+            WHERE optimization_name = ? AND variant_name = ? AND user_id = ?
+            ''',
+            (optimization_name, variant_name, user_id)
+        )
+        self.conn.commit()
+    
     def close(self):
         self.conn.close()
 
