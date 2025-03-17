@@ -13,28 +13,9 @@ from datetime import datetime, timedelta
 import mvsampling.mvsampling as mv  # ensure this import is correct
 from tabulate import tabulate
 
-# Load environment variables from .env file
-load_dotenv()
-logging.basicConfig(level=logging.INFO)  # new logging configuration
+from states import NewOptimization, NewVariant
+from config import bot, dp, optimizations_db
 
-# Get bot token from environment variable
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-if not BOT_TOKEN:
-    raise ValueError("No BOT_TOKEN provided in environment")
-
-bot = Bot(token=BOT_TOKEN, parse_mode="HTML")
-storage = MemoryStorage()
-dp = Dispatcher(storage=storage)
-
-# Simulated database to store optimizations
-optimizations_db = DatabaseDriver()
-
-class NewOptimization(StatesGroup):
-    waiting_for_name = State()
-
-class NewVariant(StatesGroup):
-    waiting_for_optimization_name = State()
-    waiting_for_variant_name = State()
 
 @dp.message(Command("start"))
 async def start_command(message: types.Message):
@@ -248,21 +229,37 @@ async def process_add_observation(callback_query: CallbackQuery, state: FSMConte
             dt_obj = change_dt
         events[dt_obj] = (opt_name, float(option_value))
     
-    # Create an instance of HandsTable (adjust the options list and minimize flag as required)
-    # get the options list from the database
+    # get the options list from the database for variant initialization
     options_list = [variant[0] for variant in optimizations_db.get_variants(optimization_name, user_id)]
+    # Create an instance of HandsTable; adjust the options list and minimize flag as required.
     a = mv.HandsTable(options_list=options_list, minimize=False)
-    result = a.process_events(events)[['name', 'mu', 'var95']]
-
-    result_str = tabulate(result, headers='keys', showindex=False, tablefmt='pretty') # type: ignore
+    full_result = a.process_events(events)
+    result = full_result[['name', 'mu', 'var95']]
     
-    # Edit the message with the processed result
+    result_str = tabulate(result, headers='keys', showindex=False, tablefmt='pretty')  # type: ignore
+    
+    # Build an inline keyboard with up to 5 buttons, in the same order as in the result dataframe.
+    keyboard = InlineKeyboardBuilder()
+    for idx, row in result.head(5).iterrows():
+        option = row['name']
+        keyboard.button(
+            text=str(option),
+            callback_data=f"select_option:{optimization_name}:{option}"
+        )
+    keyboard.adjust(1)
+    
+    # Edit the message with the processed result and the inline keyboard
     if callback_query.message:
         await callback_query.message.edit_text(
-            f"Processed observation result for '{optimization_name}':\n<pre>{result_str}</pre>\nBest option: {result.iloc[0]['name']}"
+            f"Processed observation result for '{optimization_name}':\n<pre>{result_str}</pre>\nBest option: {result.iloc[0]['name']}",
+            reply_markup=keyboard.as_markup()
         )
     else:
-        await bot.send_message(user_id, f"Processed observation result for '{optimization_name}':\n<pre>{result_str}</pre>\nBest option: {result.iloc[0]['name']}")
+        await bot.send_message(
+            user_id,
+            f"Processed observation result for '{optimization_name}':\n<pre>{result_str}</pre>\nBest option: {result.iloc[0]['name']}",
+            reply_markup=keyboard.as_markup()
+        )
     
     await callback_query.answer()
 
