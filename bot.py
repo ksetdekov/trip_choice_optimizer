@@ -9,6 +9,8 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from database_driver import DatabaseDriver
 from aiogram.utils.keyboard import InlineKeyboardBuilder 
 from aiogram.types import CallbackQuery 
+from datetime import datetime, timedelta
+import mvsampling.mvsampling as mv  # ensure this import is correct
 
 # Load environment variables from .env file
 load_dotenv()
@@ -204,6 +206,60 @@ async def process_delete_optimization(callback_query: CallbackQuery):
             callback_query.from_user.id,
             f"The optimization '{optimization_name}' has been deleted."
         )
+    await callback_query.answer()
+
+@dp.message(Command("add_observation"))
+async def add_observation_command(message: types.Message, state: FSMContext):
+    # Get all optimizations for the user
+    optimizations = optimizations_db.get_optimizations(message.from_user.id)  # type: ignore
+    keyboard = InlineKeyboardBuilder()
+    for optimization in optimizations:
+        optimization_name = optimization[0]
+        keyboard.button(
+            text=optimization_name,
+            callback_data=f"add_observation:{optimization_name}"
+        )
+    keyboard.adjust(1)  # one button per row
+    
+    await message.answer("Select the optimization for which to process observations:", reply_markup=keyboard.as_markup())
+
+
+@dp.callback_query(lambda callback: callback.data and callback.data.startswith("add_observation:"))
+async def process_add_observation(callback_query: CallbackQuery, state: FSMContext):
+    # Extract the selected optimization name
+    optimization_name = callback_query.data.split(":", 1)[1]  # type: ignore
+    user_id = callback_query.from_user.id
+    # Retrieve all samples (observations) for this optimization
+    samples = optimizations_db.get_all_samples_for_optimization(user_id, optimization_name)
+    
+    # Build the events dictionary with datetime keys and tuple (optimization_name, option_value)
+    events = {}
+    for sample in samples:
+        # sample is expected to be (optimization_name, option_value, change_datetime)
+        opt_name, option_value, change_dt = sample
+        # Convert the change_dt to a datetime object if necessary
+        if isinstance(change_dt, str):
+            try:
+                dt_obj = datetime.fromisoformat(change_dt)
+            except Exception:
+                continue
+        else:
+            dt_obj = change_dt
+        events[dt_obj] = (opt_name, float(option_value))
+    
+    # Create an instance of HandsTable (adjust the options list and minimize flag as required)
+    a = mv.HandsTable(['1', '2'], minimize=False)
+    result = a.process_events(events)
+    result_str = result.to_string()
+    
+    # Edit the message with the processed result
+    if callback_query.message:
+        await callback_query.message.edit_text(
+            f"Processed observation result for '{optimization_name}':\n{result_str}"
+        )
+    else:
+        await bot.send_message(user_id, f"Processed observation result for '{optimization_name}':\n{result_str}")
+    
     await callback_query.answer()
 
 @dp.message()  # new handler for unmatched messages

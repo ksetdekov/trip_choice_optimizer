@@ -102,12 +102,20 @@ class HandsTable:
         return output_df
 
     def process_events(self, events, days=91):
-        """Filter events and update hands"""
-        oldest_ok = max(events) - timedelta(days=days)
+        """Filter events and update hands. If no events are provided or none pass the filter, simply grade the current state."""
+        if not events:
+            # No events provided: simply return the current grade.
+            return self.grade()
+        try:
+            oldest_ok = max(events) - timedelta(days=days)
+        except ValueError:
+            # In case events is empty or max() fails, just grade.
+            return self.grade()
         filtered_events = {k: v for k, v in events.items() if k > oldest_ok}
-
-        for category, value in filtered_events.values():
-            self.update_hands(category, value)
+        if filtered_events:
+            for category, value in filtered_events.values():
+                self.update_hands(category, value)
+        # If no events pass the filter, we still proceed to grade the current state.
         return self.grade()
 
     def __str__(self):

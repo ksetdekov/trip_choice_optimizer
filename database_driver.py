@@ -25,6 +25,16 @@ class DatabaseDriver:
                 user_id INTEGER
             )
         ''')
+        # Renamed table: optimization_samples now stores the option value given by the user.
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS optimization_samples (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                optimization_name TEXT,
+                option_value TEXT,
+                change_datetime DATETIME,
+                user_id INTEGER
+            )
+        ''')
         self.conn.commit()
 
     def add_optimization(self, optimization_name, user_id):
@@ -82,9 +92,26 @@ class DatabaseDriver:
     
     def remove_optimization(self, optimization_name, user_id):
         """
-        Remove a specific optimization by its name and user ID.
+        Remove a specific optimization by its name and user ID,
+        and also remove all associated variants and samples.
         """
-        # Optionally, remove associated variants here if desired
+        # First, remove all variants associated with the optimization.
+        self.cursor.execute(
+            '''
+            DELETE FROM optimization_variant
+            WHERE optimization_name = ? AND user_id = ?
+            ''',
+            (optimization_name, user_id)
+        )
+        # Remove any samples associated with the optimization.
+        self.cursor.execute(
+            '''
+            DELETE FROM optimization_samples
+            WHERE optimization_name = ? AND user_id = ?
+            ''',
+            (optimization_name, user_id)
+        )
+        # Then, remove the optimization itself.
         self.cursor.execute(
             '''
             DELETE FROM user_optimization
@@ -98,6 +125,15 @@ class DatabaseDriver:
         """
         Remove a specific variant from an optimization.
         """
+        # Also remove any samples associated with the variant.
+        self.cursor.execute(
+            '''
+            DELETE FROM optimization_samples
+            WHERE optimization_name = ? AND variant_name = ? AND user_id = ?
+            ''',
+            (optimization_name, variant_name, user_id)
+        )
+        # Remove the variant itself.
         self.cursor.execute(
             '''
             DELETE FROM optimization_variant
@@ -106,6 +142,49 @@ class DatabaseDriver:
             (optimization_name, variant_name, user_id)
         )
         self.conn.commit()
+    
+    def add_option(self, optimization_name, option_value, user_id):
+        """
+        Add a sample (option value) for a given optimization.
+        """
+        change_datetime = datetime.now()
+        self.cursor.execute(
+            '''
+            INSERT INTO optimization_samples (optimization_name, option_value, change_datetime, user_id)
+            VALUES (?, ?, ?, ?)
+            ''',
+            (optimization_name, option_value, change_datetime, user_id)
+        )
+        self.conn.commit()
+
+    def get_options(self, optimization_name, user_id):
+        """
+        Retrieve all samples (option values) for a given optimization.
+        """
+        self.cursor.execute(
+            '''
+            SELECT option_value, change_datetime
+            FROM optimization_samples
+            WHERE optimization_name = ? AND user_id = ?
+            ''',
+            (optimization_name, user_id)
+        )
+        return self.cursor.fetchall()
+    
+    def get_all_samples_for_optimization(self, user_id, optimization_name):
+        """
+        Retrieve all samples (observations) for the given user and optimization_name.
+        Expected tuple format: (optimization_name, option_value, change_datetime)
+        """
+        self.cursor.execute(
+            '''
+            SELECT optimization_name, option_value, change_datetime
+            FROM optimization_samples
+            WHERE user_id = ? AND optimization_name = ?
+            ''',
+            (user_id, optimization_name)
+        )
+        return self.cursor.fetchall()
     
     def close(self):
         self.conn.close()

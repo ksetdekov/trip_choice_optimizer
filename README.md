@@ -4,9 +4,10 @@ find best options of an list of commute options using Thompson Sampling algorith
 
 ## TODO
 
-- [ ] Update bot.py to be able to create variants in an optimization.
+- [x] Update bot.py to be able to create variants in an optimization.
 - [x] Update bot.py to be able to create a new optimization.
 - [x] bot can add a new option to an optimization using an inline keyboard.
+- [ ] bot cat sample options from a list of options.
 
 ```bash
 docker build -t ksetdekov/trip_choice_optimizer:latest .
