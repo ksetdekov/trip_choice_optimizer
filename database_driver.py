@@ -82,21 +82,30 @@ class DatabaseDriver:
         self.conn.commit()
 
     def get_optimizations(self, user_id):
+        # get user id from user table
+
+        self.cursor.execute(
+            "SELECT id FROM users WHERE telegram_user_id = ?",
+            (user_id,)
+        )
+        internal_user_id = self.cursor.fetchone()
+
         self.cursor.execute(
             '''
             SELECT optimization_name, change_datetime 
             FROM user_optimization 
             WHERE user_id = ?
             ''',
-            (user_id,)
+            (internal_user_id,)
         )
         return self.cursor.fetchall()
     
     def get_all_optimizations(self):
         self.cursor.execute(
             '''
-            SELECT optimization_name, change_datetime, user_id
+            SELECT optimization_name, change_datetime, telegram_user_id
             FROM user_optimization
+            join users on user_optimization.user_id = users.id
             '''
         )
         return self.cursor.fetchall()
