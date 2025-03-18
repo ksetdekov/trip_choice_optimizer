@@ -30,7 +30,8 @@ class DatabaseDriver:
             CREATE TABLE IF NOT EXISTS optimization_samples (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 optimization_name TEXT,
-                option_value TEXT,
+                variant_name TEXT,
+                option_value NUMERIC,
                 change_datetime DATETIME,
                 user_id INTEGER
             )
@@ -143,33 +144,19 @@ class DatabaseDriver:
         )
         self.conn.commit()
     
-    def add_option(self, optimization_name, option_value, user_id):
+    def add_option(self, optimization_name, variant_name, option_value, user_id):
         """
         Add a sample (option value) for a given optimization.
         """
         change_datetime = datetime.now()
         self.cursor.execute(
             '''
-            INSERT INTO optimization_samples (optimization_name, option_value, change_datetime, user_id)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO optimization_samples (optimization_name, variant_name, option_value, change_datetime, user_id)
+            VALUES (?, ?, ?, ?, ?)
             ''',
-            (optimization_name, option_value, change_datetime, user_id)
+            (optimization_name, variant_name, option_value, change_datetime, user_id)
         )
         self.conn.commit()
-
-    def get_options(self, optimization_name, user_id):
-        """
-        Retrieve all samples (option values) for a given optimization.
-        """
-        self.cursor.execute(
-            '''
-            SELECT option_value, change_datetime
-            FROM optimization_samples
-            WHERE optimization_name = ? AND user_id = ?
-            ''',
-            (optimization_name, user_id)
-        )
-        return self.cursor.fetchall()
     
     def get_all_samples_for_optimization(self, user_id, optimization_name):
         """
@@ -178,7 +165,7 @@ class DatabaseDriver:
         """
         self.cursor.execute(
             '''
-            SELECT optimization_name, option_value, change_datetime
+            SELECT optimization_name, variant_name, option_value, change_datetime
             FROM optimization_samples
             WHERE user_id = ? AND optimization_name = ?
             ''',

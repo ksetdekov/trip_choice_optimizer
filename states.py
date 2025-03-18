@@ -6,3 +6,5 @@ class NewOptimization(StatesGroup):
 class NewVariant(StatesGroup):
     waiting_for_optimization_name = State()
     waiting_for_variant_name = State()
+class NewOptionValue(StatesGroup):
+    waiting_for_value = State()

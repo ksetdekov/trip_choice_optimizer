@@ -1,5 +1,5 @@
 import os
-import logging  # new import
+import logging 
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from dotenv import load_dotenv
@@ -14,6 +14,8 @@ import mvsampling.mvsampling as mv  # ensure this import is correct
 from tabulate import tabulate
 
 from states import NewOptimization, NewVariant
+from states import NewOptionValue
+
 from config import bot, dp, optimizations_db
 
 
@@ -213,12 +215,13 @@ async def process_add_observation(callback_query: CallbackQuery, state: FSMConte
     user_id = callback_query.from_user.id
     # Retrieve all samples (observations) for this optimization
     samples = optimizations_db.get_all_samples_for_optimization(user_id, optimization_name)
-    
+
+    logging.debug("samples: %s", samples)
     # Build the events dictionary with datetime keys and tuple (optimization_name, option_value)
     events = {}
     for sample in samples:
         # sample is expected to be (optimization_name, option_value, change_datetime)
-        opt_name, option_value, change_dt = sample
+        _ , opt_name, option_value, change_dt = sample
         # Convert the change_dt to a datetime object if necessary
         if isinstance(change_dt, str):
             try:
@@ -232,7 +235,9 @@ async def process_add_observation(callback_query: CallbackQuery, state: FSMConte
     # get the options list from the database for variant initialization
     options_list = [variant[0] for variant in optimizations_db.get_variants(optimization_name, user_id)]
     # Create an instance of HandsTable; adjust the options list and minimize flag as required.
+    logging.debug("options_list: %s", options_list)
     a = mv.HandsTable(options_list=options_list, minimize=False)
+    logging.debug("events: %s", events)
     full_result = a.process_events(events)
     result = full_result[['name', 'mu', 'var95']]
     
@@ -262,6 +267,42 @@ async def process_add_observation(callback_query: CallbackQuery, state: FSMConte
         )
     
     await callback_query.answer()
+
+@dp.callback_query(lambda c: c.data and c.data.startswith("select_option:"))
+async def process_select_option(callback_query: CallbackQuery, state: FSMContext):
+    """
+    When a user clicks an option button, prompt them to enter a value. 
+    The callback data is expected to be in the form:
+      select_option:{optimization_name}:{option}
+    """
+    # Extract the optimization name and option from callback data
+    _, optimization_name, option = callback_query.data.split(":", 2)
+    # Update state with the selected optimization and option.
+    await state.update_data(selected_optimization=optimization_name, selected_option=option)
+    prompt_text = f"Enter value for option '{option}' in optimization '{optimization_name}':"
+    # Edit the message to prompt the user.
+    if callback_query.message:
+        await callback_query.message.edit_text(prompt_text)
+    else:
+        await bot.send_message(callback_query.from_user.id, prompt_text)
+    await state.set_state(NewOptionValue.waiting_for_value)
+    await callback_query.answer()
+
+from aiogram.types import CallbackQuery, Message
+
+@dp.message(NewOptionValue.waiting_for_value)
+async def process_option_value(message: Message, state: FSMContext):
+    """
+    Process the user's input. Save the provided value for the selected option in the database.
+    """
+    data = await state.get_data()
+    optimization_name = data.get("selected_optimization")
+    option = data.get("selected_option")
+    option_value = message.text.strip()
+    # Write the option value to the database.
+    optimizations_db.add_option(optimization_name=optimization_name, variant_name=option, option_value=option_value, user_id=message.from_user.id)
+    await message.answer(f"Option '{option}' for optimization '{optimization_name}' saved with value '{option_value}'.")
+    await state.clear()
 
 @dp.message()  # new handler for unmatched messages
 async def default_handler(message: types.Message):

@@ -3,6 +3,7 @@ import numpy as np
 from scipy.stats import gamma, norm
 from datetime import timedelta
 from dataclasses import dataclass, field
+import logging
 
 @dataclass
 class HandsTable:
@@ -111,7 +112,8 @@ class HandsTable:
         except ValueError:
             # In case events is empty or max() fails, just grade.
             return self.grade()
-        filtered_events = {k: v for k, v in events.items() if k > oldest_ok}
+        filtered_events = {k: v for k, v in events.items() if k >= oldest_ok}
+        logging.debug("Filtered events: %s", filtered_events)
         if filtered_events:
             for category, value in filtered_events.values():
                 self.update_hands(category, value)
