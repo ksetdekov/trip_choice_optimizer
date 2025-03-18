@@ -10,49 +10,64 @@ class DatabaseDriver:
         self.create_tables()
 
     def create_tables(self):
+        # Users table using telegram_user_id as the primary key
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                telegram_user_id INTEGER NOT NULL UNIQUE
+                telegram_user_id INTEGER PRIMARY KEY
             )
         ''')
 
+        # User Optimization table linked to users table by telegram_user_id
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS user_optimization (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 optimization_name TEXT NOT NULL,
-                change_datetime DATETIME,
-                user_id INTEGER,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE            
+                change_datetime TEXT DEFAULT (datetime('now')),
+                telegram_user_id INTEGER,
+                FOREIGN KEY (telegram_user_id) REFERENCES users(telegram_user_id) ON DELETE CASCADE            
             )
         ''')
 
+        # Optimization Variant table linked to user_optimization (user info can be derived via join)
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS optimization_variant (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 optimization_id INTEGER NOT NULL,
                 variant_name TEXT NOT NULL,
-                change_datetime DATETIME,
-                user_id INTEGER,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                change_datetime TEXT DEFAULT (datetime('now')),
                 FOREIGN KEY (optimization_id) REFERENCES user_optimization(id) ON DELETE CASCADE
             )
         ''')
 
+        # Optimization Samples table linked to user_optimization and optimization_variant
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS optimization_samples (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 optimization_id INTEGER NOT NULL,
                 variant_id INTEGER NOT NULL,
                 option_value NUMERIC,
-                change_datetime DATETIME,
-                user_id INTEGER,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                change_datetime TEXT DEFAULT (datetime('now')),
                 FOREIGN KEY (optimization_id) REFERENCES user_optimization(id) ON DELETE CASCADE,
                 FOREIGN KEY (variant_id) REFERENCES optimization_variant(id) ON DELETE CASCADE
             )
         ''')
+
+        # Add indexes on foreign key columns for improved query performance
+        self.cursor.execute('''
+            CREATE INDEX IF NOT EXISTS idx_user_optimization_user ON user_optimization(telegram_user_id)
+        ''')
+        self.cursor.execute('''
+            CREATE INDEX IF NOT EXISTS idx_optimization_variant_opt ON optimization_variant(optimization_id)
+        ''')
+        self.cursor.execute('''
+            CREATE INDEX IF NOT EXISTS idx_optimization_samples_opt ON optimization_samples(optimization_id)
+        ''')
+        self.cursor.execute('''
+            CREATE INDEX IF NOT EXISTS idx_optimization_samples_variant ON optimization_samples(variant_id)
+        ''')
+
         self.conn.commit()
+
 
     def add_optimization(self, optimization_name, telegram_user_id):
         # Ensure the user exists or insert them
