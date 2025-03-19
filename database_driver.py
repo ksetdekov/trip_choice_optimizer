@@ -187,21 +187,16 @@ class DatabaseDriver:
         """
         Remove a specific variant from an optimization.
         """
-        # Also remove any samples associated with the variant.
-        self.cursor.execute(
-            '''
-            DELETE FROM optimization_samples
-            WHERE optimization_name = ? AND variant_name = ? AND user_id = ?
-            ''',
-            (optimization_name, variant_name, user_id)
-        )
+        # Find optimization by user and optimization name
+        optimization_id = self.retrieve_optimization_id(optimization_name, user_id)
+
         # Remove the variant itself.
         self.cursor.execute(
             '''
             DELETE FROM optimization_variant
-            WHERE optimization_name = ? AND variant_name = ? AND user_id = ?
+            WHERE optimization_id = ? AND variant_name = ?
             ''',
-            (optimization_name, variant_name, user_id)
+            (optimization_id, variant_name)
         )
         self.conn.commit()
     
