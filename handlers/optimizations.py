@@ -1,22 +1,16 @@
-import os
-import logging 
-from aiogram import Bot, Dispatcher, types
+import logging
+from datetime import datetime
+
+from aiogram import types
 from aiogram.filters import Command
-from dotenv import load_dotenv
-from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.storage.memory import MemoryStorage
-from database_driver import DatabaseDriver
-from aiogram.utils.keyboard import InlineKeyboardBuilder 
-from aiogram.types import CallbackQuery 
-from datetime import datetime, timedelta
-import mvsampling.mvsampling as mv  # ensure this import is correct
+from aiogram.types import CallbackQuery
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from tabulate import tabulate
 
-from states import NewOptimization, NewVariant
-from states import NewOptionValue
-
+import mvsampling.mvsampling as mv
 from config import bot, dp, optimizations_db
+from states import NewOptimization, NewOptionValue, NewVariant
 
 
 @dp.message(Command("start"))
@@ -35,10 +29,20 @@ async def new_optimization_command(message: types.Message, state: FSMContext):
 
 @dp.message(NewOptimization.waiting_for_name)
 async def process_new_optimization(message: types.Message, state: FSMContext):
-    optimization_name = message.text.strip() # type: ignore
-    optimizations_db.add_optimization(optimization_name, message.from_user.id) # type: ignore
-    all_optimizations_for_this_user = optimizations_db.get_optimizations(message.from_user.id) # type: ignore
-    await message.answer(f"Your new optimization '{optimization_name}' has been saved in the database. \n All your optimizations: {all_optimizations_for_this_user}")
+    optimization_name = message.text.strip()  # type: ignore
+    # Ignore names starting with '/'
+    if optimization_name.startswith("/"):
+        await message.answer(
+            "Invalid optimization name. Please provide a name that doesn't start with '/':\n"
+            "e.g., 'commute time' or 'coffee cups'"
+        )
+        return
+    optimizations_db.add_optimization(optimization_name, message.from_user.id)  # type: ignore
+    all_optimizations_for_this_user = optimizations_db.get_optimizations(message.from_user.id)  # type: ignore
+    await message.answer(
+        f"Your new optimization '{optimization_name}' has been saved in the database.\n"
+        f"All your optimizations: {all_optimizations_for_this_user}"
+    )
     await state.clear()
 
 @dp.message(Command("add_variant"))
@@ -215,7 +219,6 @@ async def process_add_observation(callback_query: CallbackQuery, state: FSMConte
     user_id = callback_query.from_user.id
     # Retrieve all samples (observations) for this optimization
     samples = optimizations_db.get_all_samples_for_optimization(user_id, optimization_name)
-
     logging.debug("samples: %s", samples)
     # Build the events dictionary with datetime keys and tuple (optimization_name, option_value)
     events = {}
@@ -238,7 +241,9 @@ async def process_add_observation(callback_query: CallbackQuery, state: FSMConte
     logging.debug("options_list: %s", options_list)
     a = mv.HandsTable(options_list=options_list, minimize=False)
     logging.debug("events: %s", events)
+    print(events)
     full_result = a.process_events(events)
+    print(full_result)
     result = full_result[['name', 'mu', 'var95']]
     
     result_str = tabulate(result, headers='keys', showindex=False, tablefmt='pretty')  # type: ignore
@@ -289,6 +294,7 @@ async def process_select_option(callback_query: CallbackQuery, state: FSMContext
     await callback_query.answer()
 
 from aiogram.types import CallbackQuery, Message
+
 
 @dp.message(NewOptionValue.waiting_for_value)
 async def process_option_value(message: Message, state: FSMContext):
