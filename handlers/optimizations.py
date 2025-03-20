@@ -60,7 +60,7 @@ async def process_new_optimization(message: types.Message, state: FSMContext):
 @dp.message(Command("add_variant"))
 async def add_variant_command(message: types.Message, state: FSMContext):
     # When retrieving optimizations from the database, ensure you get the id.
-    optimizations = optimizations_db.get_optimizations(message.from_user.id)  # Each record: (optimization_name, change_datetime, optimization_id)
+    optimizations = optimizations_db.get_optimizations(message.from_user.id)  # type: ignore # Each record: (optimization_name, change_datetime, optimization_id)
 
     if optimizations:
         keyboard = InlineKeyboardBuilder()
@@ -83,7 +83,7 @@ async def add_variant_command(message: types.Message, state: FSMContext):
 @dp.callback_query(lambda callback: callback.data and callback.data.startswith("select_optimization:"))
 async def process_select_optimization(callback_query: CallbackQuery, state: FSMContext):
     # Extract the optimization id from the callback data
-    optimization_id = callback_query.data.split(":", 1)[1]
+    optimization_id = callback_query.data.split(":", 1)[1] # type: ignore
     # Look up the full optimization name
     optimization_name = optimizations_db.get_optimization_name(optimization_id)  
     await state.update_data(optimization_id=optimization_id, optimization_name=optimization_name)
@@ -143,7 +143,7 @@ async def delete_variant_command(message: types.Message, state: FSMContext):
 @dp.callback_query(lambda callback: callback.data and callback.data.startswith("delete_variant_opt:"))
 async def process_delete_variant_selection(callback_query: CallbackQuery, state: FSMContext):
     # Extract the selected optimization name.
-    optimization_name = callback_query.data.split(":", 1)[1]
+    optimization_name = callback_query.data.split(":", 1)[1] # type: ignore
     # Build a keyboard with the list of variants for this optimization.
     variants = optimizations_db.get_variants(optimization_name, callback_query.from_user.id)  # type: ignore
     if not variants:
@@ -157,7 +157,7 @@ async def process_delete_variant_selection(callback_query: CallbackQuery, state:
             callback_data=f"delete_variant:{optimization_name}:{variant_name}"
         )
     keyboard.adjust(1)
-    await callback_query.message.edit_text(
+    await callback_query.message.edit_text( # type: ignore
         f"Select the variant to delete from optimization '{optimization_name}':",
         reply_markup=keyboard.as_markup()
     )
@@ -166,7 +166,7 @@ async def process_delete_variant_selection(callback_query: CallbackQuery, state:
 @dp.callback_query(lambda callback: callback.data and callback.data.startswith("delete_variant:"))
 async def process_delete_variant(callback_query: CallbackQuery):
     # Expected callback data format: delete_variant:{optimization_name}:{variant_name}
-    parts = callback_query.data.split(":", 2)
+    parts = callback_query.data.split(":", 2) # type: ignore
     if len(parts) < 3:
         await callback_query.answer("Invalid callback data.", show_alert=True)
         return
@@ -174,7 +174,7 @@ async def process_delete_variant(callback_query: CallbackQuery):
     variant_name = parts[2]
     # Remove the selected variant from the database. Ensure that your DatabaseDriver has a remove_variant method.
     optimizations_db.remove_variant(optimization_name, variant_name, callback_query.from_user.id)  # type: ignore
-    await callback_query.message.edit_text(
+    await callback_query.message.edit_text( # type: ignore
         f"Variant '{variant_name}' has been deleted from optimization '{optimization_name}'."
     )
     await callback_query.answer()
@@ -257,6 +257,7 @@ async def process_add_observation(callback_query: CallbackQuery, state: FSMConte
     # get the options list from the database for variant initialization
     options_list = [variant[0] for variant in optimizations_db.get_variants(optimization_name, user_id)]
     # Create an instance of HandsTable; adjust the options list and minimize flag as required.
+    # Currently hardcoded to maximize - here minimize=False
     logging.debug("options_list: %s", options_list)
     a = mv.HandsTable(options_list=options_list, minimize=False)
     logging.debug("events: %s", events)
@@ -300,7 +301,7 @@ async def process_select_option(callback_query: CallbackQuery, state: FSMContext
       select_option:{optimization_name}:{option}
     """
     # Extract the optimization name and option from callback data
-    _, optimization_name, option = callback_query.data.split(":", 2)
+    _, optimization_name, option = callback_query.data.split(":", 2) # type: ignore
     # Update state with the selected optimization and option.
     await state.update_data(selected_optimization=optimization_name, selected_option=option)
     prompt_text = f"Enter value for option '{option}' in optimization '{optimization_name}':"
@@ -323,9 +324,9 @@ async def process_option_value(message: Message, state: FSMContext):
     data = await state.get_data()
     optimization_name = data.get("selected_optimization")
     option = data.get("selected_option")
-    option_value = message.text.strip()
+    option_value = message.text.strip() # type: ignore
     # Write the option value to the database.
-    optimizations_db.add_option(optimization_name=optimization_name, variant_name=option, option_value=option_value, user_id=message.from_user.id)
+    optimizations_db.add_option(optimization_name=optimization_name, variant_name=option, option_value=option_value, user_id=message.from_user.id) # type: ignore
     await message.answer(f"Option '{option}' for optimization '{optimization_name}' saved with value '{option_value}'.")
     await state.clear()
 
