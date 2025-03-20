@@ -10,6 +10,7 @@ find best options of an list of commute options using Thompson Sampling algorith
 - [x] bot cat sample options from a list of options.
 - [x] handled an error with optimization being named too long - "Звать Мерлина, если он орет?”- это давало превышение 64 байт в callback_data
 - [] сделать усечение длины названий до 280 байт
+- [] на этапе удаления оптимизации также передавать id оптимизации в callback_data
 
 ```bash
 docker build -t ksetdekov/trip_choice_optimizer:latest .
