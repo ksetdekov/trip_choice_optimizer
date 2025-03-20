@@ -329,18 +329,3 @@ async def process_option_value(message: Message, state: FSMContext):
     optimizations_db.add_option(optimization_name=optimization_name, variant_name=option, option_value=option_value, user_id=message.from_user.id) # type: ignore
     await message.answer(f"Option '{option}' for optimization '{optimization_name}' saved with value '{option_value}'.")
     await state.clear()
-
-@dp.message()  # new handler for unmatched messages
-async def default_handler(message: types.Message):
-    await message.answer(
-        "I didn't understand that command. Please use one of the following commands:\n"
-        "- /start: Show the welcome message and available commands\n"
-        "- /new: Create a new optimization\n"
-        "- /add_variant: Add a variant to an optimization\n"
-        "- /delete_variant: Delete a variant from an optimization\n"
-        "- /delete_optimization: Delete an entire optimization\n"
-        "- /add_observation: Add an observation for an optimization"
-    )
-
-if __name__ == "__main__":
-    dp.run_polling(bot)
