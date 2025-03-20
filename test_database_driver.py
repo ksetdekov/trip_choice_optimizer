@@ -17,6 +17,24 @@ class TestDatabaseDriver(unittest.TestCase):
         self.assertEqual(len(optimizations), 1)
         self.assertEqual(optimizations[0][0], opt_name)
 
+    def test_add_optimization_new_and_existing_user(self):
+        telegram_user_id = 12345
+        optimization_name_A = "Optimization A"
+        optimization_name_B = "Optimization B"
+
+        # First call: user does not exist, so new user should be inserted.
+        self.db.add_optimization(optimization_name_A, telegram_user_id)
+        optimizations = self.db.get_optimizations(telegram_user_id)
+        self.assertEqual(len(optimizations), 1)
+        self.assertEqual(optimizations[0][0], optimization_name_A)
+        
+        # Second call with same telegram_user_id: user exists, so branch should re-use existing user.
+        self.db.add_optimization(optimization_name_B, telegram_user_id)
+        optimizations = self.db.get_optimizations(telegram_user_id)
+        self.assertEqual(len(optimizations), 2)
+        names = [opt[0] for opt in optimizations]
+        self.assertIn(optimization_name_B, names)
+
     def test_remove_optimization(self):
         user_id = 1
         opt_name = "Optimization To Remove"
@@ -47,6 +65,21 @@ class TestDatabaseDriver(unittest.TestCase):
         self.db.add_optimization("User2 Optimization", 2)
         all_opts = self.db.get_all_optimizations()
         self.assertEqual(len(all_opts), 2)
+    
+    def test_get_optimization_name(self):
+        user_id = 1
+        opt_name = "Test Optimization Name"
+        # Add an optimization for the user.
+        self.db.add_optimization(opt_name, user_id)
+        # Retrieve the list of optimizations. Each record is (optimization_name, change_datetime, id).
+        optimizations = self.db.get_optimizations(user_id)
+        self.assertTrue(len(optimizations) > 0, "No optimizations found for the user.")
+        
+        # Get the optimization_id from the first record.
+        optimization_id = optimizations[0][2]
+        # Call get_optimization_name using that ID.
+        retrieved_name = self.db.get_optimization_name(optimization_id)
+        self.assertEqual(retrieved_name, opt_name)
 
 if __name__ == "__main__":
     unittest.main()
