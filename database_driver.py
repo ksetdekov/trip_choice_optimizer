@@ -100,7 +100,7 @@ class DatabaseDriver:
 
         self.cursor.execute(
             '''
-            SELECT optimization_name, change_datetime 
+            SELECT optimization_name, change_datetime, id 
             FROM user_optimization 
             WHERE telegram_user_id = ?
             ''',
@@ -159,6 +159,21 @@ class DatabaseDriver:
         )
         optimization_id = int(self.cursor.fetchone()[0])
         return optimization_id
+
+    def get_optimization_name(self, optimization_id) -> str:
+        """
+        Retrieve the optimization name based on the optimization_id.
+        """
+        self.cursor.execute(
+            '''
+            SELECT optimization_name
+            FROM user_optimization
+            WHERE id = ?
+            ''',
+            (optimization_id,)
+        )
+        optimization_name = self.cursor.fetchone()[0]
+        return optimization_name
     
     def remove_optimization(self, optimization_name, user_id):
         """

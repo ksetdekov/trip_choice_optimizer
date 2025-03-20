@@ -7,7 +7,9 @@ find best options of an list of commute options using Thompson Sampling algorith
 - [x] Update bot.py to be able to create variants in an optimization.
 - [x] Update bot.py to be able to create a new optimization.
 - [x] bot can add a new option to an optimization using an inline keyboard.
-- [ ] bot cat sample options from a list of options.
+- [x] bot cat sample options from a list of options.
+- [x] handled an error with optimization being named too long - "Звать Мерлина, если он орет?”- это давало превышение 64 байт в callback_data
+- [] сделать усечение длины названий до 280 байт
 
 ```bash
 docker build -t ksetdekov/trip_choice_optimizer:latest .

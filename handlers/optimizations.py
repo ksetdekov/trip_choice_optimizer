@@ -11,7 +11,7 @@ from tabulate import tabulate
 import mvsampling.mvsampling as mv
 from config import bot, dp, optimizations_db
 from states import NewOptimization, NewOptionValue, NewVariant
-
+from handlers.text_formatting import StringProcessor
 
 @dp.message(Command("start"))
 async def start_command(message: types.Message):
@@ -37,6 +37,18 @@ async def process_new_optimization(message: types.Message, state: FSMContext):
             "e.g., 'commute time' or 'coffee cups'"
         )
         return
+    # use text_formatting from StringProcessor to truncate the name
+    processor = StringProcessor()
+    optimization_name = processor.trunc64(optimization_name)
+
+    # Check if the optimization name is already in use
+    existing_optimizations = optimizations_db.get_optimizations(message.from_user.id)  # type: ignore
+    if any(opt[0] == optimization_name for opt in existing_optimizations):
+        await message.answer(
+            "This optimization name already exists. Please provide a different name:"
+        )
+        return
+    # Add the new optimization to the database
     optimizations_db.add_optimization(optimization_name, message.from_user.id)  # type: ignore
     all_optimizations_for_this_user = optimizations_db.get_optimizations(message.from_user.id)  # type: ignore
     await message.answer(
@@ -47,16 +59,20 @@ async def process_new_optimization(message: types.Message, state: FSMContext):
 
 @dp.message(Command("add_variant"))
 async def add_variant_command(message: types.Message, state: FSMContext):
-    optimizations = optimizations_db.get_optimizations(message.from_user.id) # type: ignore
+    # When retrieving optimizations from the database, ensure you get the id.
+    optimizations = optimizations_db.get_optimizations(message.from_user.id)  # Each record: (optimization_name, change_datetime, optimization_id)
+
     if optimizations:
         keyboard = InlineKeyboardBuilder()
         for optimization in optimizations:
+            # Assume your get_optimizations now returns (optimization_name, change_datetime, optimization_id)
             optimization_name = optimization[0]
+            optimization_id = optimization[2]  # Get the id
             keyboard.button(
                 text=optimization_name,
-                callback_data=f"select_optimization:{optimization_name}"
+                callback_data=f"select_optimization:{optimization_id}"
             )
-        keyboard.adjust(1)  # one button per row
+        keyboard.adjust(1) # one button per row
         await message.answer(
             "Please select the optimization to which you want to add a variant:",
             reply_markup=keyboard.as_markup()
@@ -66,11 +82,14 @@ async def add_variant_command(message: types.Message, state: FSMContext):
 
 @dp.callback_query(lambda callback: callback.data and callback.data.startswith("select_optimization:"))
 async def process_select_optimization(callback_query: CallbackQuery, state: FSMContext):
-    # Extract the optimization name from the callback data
-    optimization_name = callback_query.data.split(":", 1)[1] # type: ignore
-    await state.update_data(optimization_name=optimization_name)
+    # Extract the optimization id from the callback data
+    optimization_id = callback_query.data.split(":", 1)[1]
+    # Look up the full optimization name
+    optimization_name = optimizations_db.get_optimization_name(optimization_id)  
+    await state.update_data(optimization_id=optimization_id, optimization_name=optimization_name)
+    
     if callback_query.message:
-        await callback_query.message.edit_text( # type: ignore
+        await callback_query.message.edit_text(
             f"Selected optimization: {optimization_name}\nPlease provide the variant name or details:"
         )
     else:
