@@ -1,4 +1,5 @@
 from aiogram import types
+from aiogram.filters import Command
 from config import dp
 
 @dp.message()  # Handler for unmatched messages
@@ -14,7 +15,7 @@ async def default_handler(message: types.Message):
         "- /add_observation: Add an observation for an optimization"
     )
 
-@dp.message(commands=['help'])
+@dp.message(Command("help"))  # Updated to use Command as a positional argument
 async def help_command(message: types.Message):
     help_text = (
         "🤖 *Trip Choice Optimizer Bot Help*\n\n"
