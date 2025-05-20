@@ -37,25 +37,70 @@ async def process_new_optimization(message: types.Message, state: FSMContext):
             "e.g., 'commute time' or 'coffee cups'"
         )
         return
-    # use text_formatting from StringProcessor to truncate the name
-    processor = StringProcessor()
-    optimization_name = processor.trunc64(optimization_name)
 
-    # Check if the optimization name is already in use
-    existing_optimizations = optimizations_db.get_optimizations(message.from_user.id)  # type: ignore
-    if any(opt[0] == optimization_name for opt in existing_optimizations):
-        await message.answer(
-            "This optimization name already exists. Please provide a different name:"
-        )
-        return
-    # Add the new optimization to the database
-    optimizations_db.add_optimization(optimization_name, message.from_user.id)  # type: ignore
-    all_optimizations_for_this_user = optimizations_db.get_optimizations(message.from_user.id)  # type: ignore
-    await message.answer(
-        f"Your new optimization '{optimization_name}' has been saved in the database.\n"
-        f"All your optimizations: {all_optimizations_for_this_user}"
-    )
-    await state.clear()
+    await state.update_data(optimization_name=optimization_name)
+    
+    keyboard = InlineKeyboardBuilder()
+    keyboard.button(text="Numeric", callback_data="optimization_type:numeric")
+    keyboard.button(text="Yes/No", callback_data="optimization_type:yes_no")
+    keyboard.adjust(1)  # one button per row
+
+    await message.answer("What type of optimization is this?", reply_markup=keyboard.as_markup())
+    await state.set_state(NewOptimization.waiting_for_type)
+
+@dp.callback_query(lambda callback: callback.data and callback.data.startswith("optimization_type:"))
+async def process_optimization_type(callback_query: CallbackQuery, state: FSMContext):
+    optimization_type = callback_query.data.split(":")[1]  # type: ignore # Extract the type from callback data
+    if optimization_type == "numeric":
+        data = await state.get_data()
+        optimization_name = data.get("optimization_name")
+
+        # Check if the optimization name is already in use
+        existing_optimizations = optimizations_db.get_optimizations(callback_query.from_user.id)  # type: ignore
+        if any(opt[0] == optimization_name for opt in existing_optimizations):
+            if callback_query.message:
+                await callback_query.message.edit_text(
+                    "This optimization name already exists. Please provide a different name:"
+                )
+            else:
+                await bot.send_message(
+                    callback_query.from_user.id,
+                    "This optimization name already exists. Please provide a different name:"
+                )
+            return
+
+        # Add the new optimization to the database
+        optimizations_db.add_optimization(optimization_name, callback_query.from_user.id)  # type: ignore
+        all_optimizations_for_this_user = optimizations_db.get_optimizations(callback_query.from_user.id)  # type: ignore
+        if callback_query.message:
+            await callback_query.message.edit_text(
+                f"Your new optimization '{optimization_name}' has been saved in the database.\n"
+                f"All your optimizations: {all_optimizations_for_this_user}"
+            )
+        else:
+            await bot.send_message(
+                callback_query.from_user.id,
+                f"Your new optimization '{optimization_name}' has been saved in the database.\n"
+                f"All your optimizations: {all_optimizations_for_this_user}"
+            )
+        await state.clear()
+    elif optimization_type == "yes_no":
+        if callback_query.message:
+            await callback_query.message.edit_text("Binomial optimizations are currently in development. Please try again later.")
+        else:
+            await bot.send_message(
+                callback_query.from_user.id,
+                "Binomial optimizations are currently in development. Please try again later."
+            )
+        await state.clear()
+    else:
+        if callback_query.message:
+            await callback_query.message.edit_text("Invalid type. Please select 'Numeric' or 'Yes/No' from the buttons.")
+        else:
+            await bot.send_message(
+                callback_query.from_user.id,
+                "Invalid type. Please select 'Numeric' or 'Yes/No' from the buttons."
+            )
 
 @dp.message(Command("add_variant"))
 async def add_variant_command(message: types.Message, state: FSMContext):
