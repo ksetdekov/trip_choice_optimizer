@@ -186,9 +186,11 @@ async def delete_optimization_command(message: types.Message):
         keyboard = InlineKeyboardBuilder()
         for optimization in optimizations:
             optimization_name = optimization[0]
+            # Truncate the optimization name if it exceeds the callback data limit
+            truncated_name = optimization_name[:50]  # Ensure callback data is within 64 characters
             keyboard.button(
                 text=optimization_name,
-                callback_data=f"delete_optimization:{optimization_name}"
+                callback_data=f"delete_optimization:{truncated_name}"
             )
         keyboard.adjust(1)  # one button per row
         await message.answer(
