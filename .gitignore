@@ -145,4 +145,7 @@ tripchoice_venv/bin/python
 tripchoice_venv/bin/python3
 db/pythonsqlite.db
 secrets.sh
+
+# Custom environment variable file
+.env
 main_db.db
