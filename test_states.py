@@ -1,6 +1,15 @@
 import unittest
 from aiogram.fsm.state import State
-from states import NewOptimization, NewVariant, NewOptionValue
+from states import (
+    LogObservation,
+    NewOptimization,
+    NewOptionValue,
+    NewVariant,
+    OptionManagement,
+    PlotFlow,
+    RecommendationFlow,
+    SetupOptimization,
+)
 
 class TestStates(unittest.TestCase):
     def test_new_optimization_state(self):
@@ -23,6 +32,34 @@ class TestStates(unittest.TestCase):
         state = NewOptionValue.waiting_for_value
         self.assertIsInstance(state, State)
         self.assertIn("NewOptionValue", state.state) # type: ignore
+
+    def test_setup_optimization_states(self):
+        states = [
+            SetupOptimization.waiting_for_name,
+            SetupOptimization.waiting_for_metric_type,
+            SetupOptimization.waiting_for_objective,
+            SetupOptimization.waiting_for_recency,
+            SetupOptimization.waiting_for_rho,
+            SetupOptimization.waiting_for_variants,
+        ]
+        self.assertEqual(len({state.state for state in states}), len(states)) # type: ignore
+        for state in states:
+            self.assertIsInstance(state, State)
+            self.assertIn("SetupOptimization", state.state) # type: ignore
+
+    def test_daily_flow_states(self):
+        states = [
+            RecommendationFlow.selecting_optimization,
+            LogObservation.selecting_optimization,
+            LogObservation.selecting_variant,
+            LogObservation.waiting_for_value,
+            PlotFlow.selecting_optimization,
+            PlotFlow.selecting_plot_type,
+            OptionManagement.waiting_for_variant_name,
+        ]
+        self.assertEqual(len({state.state for state in states}), len(states)) # type: ignore
+        for state in states:
+            self.assertIsInstance(state, State)
 
 if __name__ == '__main__':
     unittest.main()

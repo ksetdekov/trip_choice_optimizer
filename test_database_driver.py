@@ -81,5 +81,74 @@ class TestDatabaseDriver(unittest.TestCase):
         retrieved_name = self.db.get_optimization_name(optimization_id)
         self.assertEqual(retrieved_name, opt_name)
 
+    def test_optimization_config_defaults_and_overrides(self):
+        user_id = 1
+        optimization_id = self.db.add_optimization(
+            "Configured Optimization",
+            user_id,
+            metric_type="time",
+            objective="maximize",
+            recency_days=180,
+            rho=2.5,
+        )
+
+        config = self.db.get_optimization_config(optimization_id, user_id=user_id)
+
+        self.assertEqual(config["metric_type"], "time")
+        self.assertEqual(config["objective"], "maximize")
+        self.assertEqual(config["recency_days"], 180)
+        self.assertEqual(config["rho"], 2.5)
+
+    def test_active_optimization(self):
+        user_id = 1
+        optimization_id = self.db.add_optimization("Active Optimization", user_id)
+
+        self.db.set_active_optimization(user_id, optimization_id)
+
+        self.assertEqual(self.db.get_active_optimization_id(user_id), optimization_id)
+
+    def test_pending_recommendation(self):
+        user_id = 1
+        optimization_id = self.db.add_optimization("Pending Optimization", user_id)
+        variant_id = self.db.add_variant_by_id(optimization_id, "Variant A")
+
+        self.db.set_pending_recommendation(user_id, optimization_id, variant_id)
+        pending = self.db.get_pending_recommendation(user_id)
+
+        self.assertEqual(pending["optimization_id"], optimization_id)
+        self.assertEqual(pending["variant_id"], variant_id)
+        self.assertEqual(pending["optimization_name"], "Pending Optimization")
+        self.assertEqual(pending["variant_name"], "Variant A")
+
+        self.db.clear_pending_recommendation(user_id)
+        self.assertIsNone(self.db.get_pending_recommendation(user_id))
+
+    def test_sample_by_ids(self):
+        user_id = 1
+        optimization_id = self.db.add_optimization("Sample Optimization", user_id)
+        variant_id = self.db.add_variant_by_id(optimization_id, "Variant A")
+
+        self.db.add_sample_by_ids(
+            optimization_id,
+            variant_id,
+            12.5,
+            change_datetime="2025-01-01 08:00:00",
+        )
+        samples = self.db.get_samples_for_optimization_id(optimization_id)
+
+        self.assertEqual(len(samples), 1)
+        self.assertEqual(samples[0][2], variant_id)
+        self.assertEqual(samples[0][3], "Variant A")
+        self.assertEqual(samples[0][4], 12.5)
+
+    def test_remove_variant_by_id(self):
+        user_id = 1
+        optimization_id = self.db.add_optimization("Variant Removal", user_id)
+        variant_id = self.db.add_variant_by_id(optimization_id, "Variant A")
+
+        self.db.remove_variant_by_id(optimization_id, variant_id)
+
+        self.assertEqual(self.db.get_variants_by_optimization_id(optimization_id), [])
+
 if __name__ == "__main__":
     unittest.main()
